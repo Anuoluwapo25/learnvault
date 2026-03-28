@@ -94,7 +94,9 @@ fn release_tranche_authorized(
     client: &MilestoneEscrowClient<'_>,
     proposal_id: u32,
 ) -> Result<(), Result<soroban_sdk::Error, soroban_sdk::InvokeError>> {
-    client.env.mock_all_auths();
+    if let Some(escrow) = client.get_escrow(&proposal_id) {
+        set_caller(client, "release_tranche", &escrow.admin, (proposal_id,));
+    }
     client.try_release_tranche(&proposal_id).map(|_| ())
 }
 
@@ -102,7 +104,9 @@ fn reclaim_inactive_authorized(
     client: &MilestoneEscrowClient<'_>,
     proposal_id: u32,
 ) -> Result<(), Result<soroban_sdk::Error, soroban_sdk::InvokeError>> {
-    client.env.mock_all_auths();
+    if let Some(escrow) = client.get_escrow(&proposal_id) {
+        set_caller(client, "reclaim_inactive", &escrow.admin, (proposal_id,));
+    }
     client.try_reclaim_inactive(&proposal_id).map(|_| ())
 }
 
@@ -253,7 +257,7 @@ fn reclaim_inactive_uses_configured_window_size() {
 
 #[test]
 fn reclaim_inactive_emits_event() {
-    let (env, contract_id, _token, _admin, treasury, scholar) = setup();
+    let (env, contract_id, _token, _admin, _treasury, scholar) = setup();
     let client = MilestoneEscrowClient::new(&env, &contract_id);
 
     create_escrow(&client, 77, &scholar, 120, 4);
